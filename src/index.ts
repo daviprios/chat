@@ -24,7 +24,7 @@ socketServer.on('connection', (socket: Socket & {
 
 		if(rooms.get(room)!.has(username)) {
 			console.log(username)
-			return socket.emit('room-enter-failed')
+			return socket.emit('room-enter-fail')
 		}
 
 		rooms.get(room)!.add(username)
@@ -32,21 +32,50 @@ socketServer.on('connection', (socket: Socket & {
 		socket.data.username = username
 		socket.data.room = room
 
-		socket.emit('room-enter-success', rooms.get(room))
-		socket.to(room).emit('room-enter', username)
+		socket.emit('room-enter-success', username)
+
+		let users: string[] = []
+		rooms.get(room)?.forEach((username) => {
+			users.push(username)
+		})
+		socketServer.in(room).emit('room-enter', users)
 
 		console.log(username, room)
 	})
 
 	socket.on('message-send', (message: string) => {
 		if(!socket.data.room || !socket.data.username) return socket.emit('not-logged')
+		
+		console.log(message, socket.data.username, Date.now())
+		
+		socketServer.to(socket.data.room).emit('message-recieve', message, socket.data.username, Date.now())
+	})
+	
+	socket.on('room-list', () => {
+		if(!socket.data.room || !socket.data.username) return socket.emit('not-logged')
 
-		socketServer.to(socket.data.room).emit('message-recieve', socket.data.username, Date.now(), message)
+		let users: string[] = []
+		rooms.get(socket.data.room)?.forEach((username) => {
+			users.push(username)
+		})
+		socket.emit('room-list', users)
 	})
 
-	socket.on("disconnect", (reason) => {
-		if(!socket.data.room || !socket.data.username) return
+	socket.on('room-exit', () => {
+		if(!socket.data.room || !socket.data.username) return socket.emit('not-logged')
+
+		console.log('exit', socket.data.username)
+
+		rooms.get(socket.data.room)!.delete(socket.data.username)
+		socket.to(socket.data.room).emit('room-exit', socket.data.username)
+	})
+	
+	socket.on("disconnect", () => {
+		if(!socket.data.room || !socket.data.username) return socket.emit('not-logged')
 		
+		console.log('exit', socket.data.username)
+
+		rooms.get(socket.data.room)!.delete(socket.data.username)
 		socket.to(socket.data.room).emit('room-exit', socket.data.username)
 	})
 })
