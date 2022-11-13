@@ -17,18 +17,24 @@
 		"ext": "*.ts, *.js"
 	},
 	"scripts": {
-		"dev": "nodemon"
+		"dev": "nodemon",
+		"build": "rollup -c",
+		"start": "node ./dist/index.js"
 	},
 	"author": "daviprios",
 	"devDependencies": {
+		"@rollup/plugin-commonjs": "^23.0.2",
+		"@rollup/plugin-json": "^5.0.1",
+		"@rollup/plugin-node-resolve": "^15.0.1",
+		"@rollup/plugin-typescript": "^9.0.2",
 		"@types/node": "^18.11.9",
 		"nodemon": "^2.0.20",
 		"rollup": "^3.2.5",
 		"ts-node": "^10.9.1",
+		"tslib": "^2.4.1",
 		"typescript": "^4.8.4"
 	},
 	"dependencies": {
 		"socket.io": "^4.5.3"
 	}
 }
-
