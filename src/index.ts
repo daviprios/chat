@@ -4,7 +4,8 @@ import { Server, Socket } from 'socket.io'
 const httpServer = http.createServer().listen(8000)
 const socketServer = new Server(httpServer, {
 	cors: {
-		origin: '*',
+		origin: "http://chat.polimaquina.com",
+    methods: ["GET", "POST"]
 	},
 })
 
