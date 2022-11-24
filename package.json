@@ -35,6 +35,7 @@
 		"typescript": "^4.8.4"
 	},
 	"dependencies": {
+		"chalk": "4",
 		"socket.io": "^4.5.3"
 	}
 }

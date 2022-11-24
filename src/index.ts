@@ -1,11 +1,14 @@
 import http from 'node:http'
 import { Server, Socket } from 'socket.io'
+import chalk from 'chalk'
 
-const httpServer = http.createServer().listen(8000)
+const httpServer = http.createServer().listen(8000, () => {
+	console.log('Server Started')
+})
 const socketServer = new Server(httpServer, {
 	cors: {
-		origin: "http://chat.polimaquina.com",
-    methods: ["GET", "POST"]
+		origin: '*',
+    methods: ['GET', 'POST']
 	},
 })
 
@@ -17,14 +20,15 @@ socketServer.on('connection', (socket: Socket & {
 		room: string
 	}>
 }) => {
-	console.log('Connected')
-
+	console.log(chalk`{magenta ${socket.id}} has connected`)
 	socket.on('room-enter', (room: string, username: string) => {
+		console.log(chalk`{magenta ${socket.id}} as {blue ${username}} is trying to enter room {green ${room}}`)
+
 		if(!rooms.has(room)) rooms.set(room, new Set())
 		socket.join(room)
 
 		if(rooms.get(room)!.has(username)) {
-			console.log(username)
+			console.log(chalk`{blue ${username}} is already online in room {green ${room}}. Cannot have duplicants`)
 			return socket.emit('room-enter-fail')
 		}
 
@@ -41,13 +45,13 @@ socketServer.on('connection', (socket: Socket & {
 		})
 		socketServer.in(room).emit('room-enter', users)
 
-		console.log(username, room)
+		console.log(chalk`{blue ${username}} has successfully entered room {green ${room}}`)
 	})
 
 	socket.on('message-send', (message: string) => {
 		if(!socket.data.room || !socket.data.username) return socket.emit('not-logged')
 		
-		console.log(message, socket.data.username, Date.now())
+		console.log(chalk`{green ${socket.data.room}} {blue ${socket.data.username}}: {yellow ${message}} at {bgCyan ${new Date().toISOString()}}`)
 		
 		socketServer.to(socket.data.room).emit('message-recieve', message, socket.data.username, Date.now())
 	})
@@ -65,16 +69,19 @@ socketServer.on('connection', (socket: Socket & {
 	socket.on('room-exit', () => {
 		if(!socket.data.room || !socket.data.username) return socket.emit('not-logged')
 
-		console.log('exit', socket.data.username)
+		console.log(chalk`{blue ${socket.data.username}} has exited room {green ${socket.data.room}}`)
 
 		rooms.get(socket.data.room)!.delete(socket.data.username)
 		socket.to(socket.data.room).emit('room-exit', socket.data.username)
 	})
 	
-	socket.on("disconnect", () => {
-		if(!socket.data.room || !socket.data.username) return socket.emit('not-logged')
+	socket.on('disconnecting', () => {
+		if(!socket.data.room || !socket.data.username) {
+			console.log(chalk`{magenta ${socket.id}} has not data, therefore not logged for disconnecting`)
+			return socket.emit('not-logged')
+		}
 		
-		console.log('exit', socket.data.username)
+		console.log(chalk`{blue ${socket.data.username}} has disconnected from the server, therefore exiting room {green ${socket.data.room}}`)
 
 		rooms.get(socket.data.room)!.delete(socket.data.username)
 		socket.to(socket.data.room).emit('room-exit', socket.data.username)
